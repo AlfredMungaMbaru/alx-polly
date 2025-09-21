@@ -27,13 +27,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const getUser = async () => {
       const { data, error } = await supabase.auth.getUser();
       if (error) {
-        console.error('Error fetching user:', error);
+        // SECURITY FIX: Don't log sensitive auth errors to console in production
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Error fetching user:', error);
+        }
       }
       if (mounted) {
         setUser(data.user ?? null);
         setSession(null);
         setLoading(false);
-        console.log('AuthContext: Initial user loaded', data.user);
+        // SECURITY FIX: Remove sensitive auth logging in production
+        if (process.env.NODE_ENV === 'development') {
+          console.log('AuthContext: Initial user loaded', data.user?.id);
+        }
       }
     };
 
@@ -42,8 +48,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
-      // Do not set loading to false here, only after initial load
-      console.log('AuthContext: Auth state changed', _event, session, session?.user);
+      // SECURITY FIX: Remove sensitive auth state logging in production
+      if (process.env.NODE_ENV === 'development') {
+        console.log('AuthContext: Auth state changed', _event, session?.user?.id);
+      }
     });
 
     return () => {
@@ -56,7 +64,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     await supabase.auth.signOut();
   };
 
-  console.log('AuthContext: user', user);
+  // SECURITY FIX: Remove sensitive user data logging in production
+  if (process.env.NODE_ENV === 'development') {
+    console.log('AuthContext: user', user?.id);
+  }
   return (
     <AuthContext.Provider value={{ session, user, signOut, loading }}>
       {children}

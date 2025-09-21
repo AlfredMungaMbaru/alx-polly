@@ -41,24 +41,48 @@ export default function VulnerableShare({
   };
 
   const shareOnTwitter = () => {
-    const text = encodeURIComponent(`Check out this poll: ${pollTitle}`);
+    // SECURITY FIX: Validate and sanitize poll title before sharing
+    const sanitizedTitle = pollTitle.replace(/[<>]/g, '');
+    const text = encodeURIComponent(`Check out this poll: ${sanitizedTitle}`);
     const url = encodeURIComponent(shareUrl);
+    
+    // SECURITY FIX: Additional validation for URL
+    if (!shareUrl.startsWith(window.location.origin)) {
+      console.error('Invalid share URL detected');
+      return;
+    }
+    
     window.open(
       `https://twitter.com/intent/tweet?text=${text}&url=${url}`,
       "_blank",
+      "noopener,noreferrer" // SECURITY FIX: Prevent window.opener attacks
     );
   };
 
   const shareOnFacebook = () => {
+    // SECURITY FIX: URL validation
+    if (!shareUrl.startsWith(window.location.origin)) {
+      console.error('Invalid share URL detected');
+      return;
+    }
+    
     const url = encodeURIComponent(shareUrl);
     window.open(
       `https://www.facebook.com/sharer/sharer.php?u=${url}`,
       "_blank",
+      "noopener,noreferrer" // SECURITY FIX: Prevent window.opener attacks
     );
   };
 
   const shareViaEmail = () => {
-    const subject = encodeURIComponent(`Poll: ${pollTitle}`);
+    // SECURITY FIX: Sanitize inputs and validate URL
+    const sanitizedTitle = pollTitle.replace(/[<>]/g, '');
+    if (!shareUrl.startsWith(window.location.origin)) {
+      console.error('Invalid share URL detected');
+      return;
+    }
+    
+    const subject = encodeURIComponent(`Poll: ${sanitizedTitle}`);
     const body = encodeURIComponent(
       `Hi! I'd like to share this poll with you: ${shareUrl}`,
     );

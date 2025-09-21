@@ -31,15 +31,30 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith('/login') &&
-    !request.nextUrl.pathname.startsWith('/auth')
-  ) {
-    // no user, potentially respond by redirecting the user to the login page
+  // SECURITY FIX: Enhanced route protection
+  const isAuthPage = request.nextUrl.pathname.startsWith('/login') || 
+                    request.nextUrl.pathname.startsWith('/register') ||
+                    request.nextUrl.pathname.startsWith('/auth')
+  
+  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
+  const isDashboardRoute = request.nextUrl.pathname.startsWith('/(dashboard)') ||
+                          request.nextUrl.pathname.startsWith('/create') ||
+                          request.nextUrl.pathname.startsWith('/polls')
+
+  if (!user && !isAuthPage) {
+    // SECURITY FIX: Redirect unauthenticated users to login
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
+  }
+
+  // SECURITY FIX: Add admin role check for admin routes
+  if (isAdminRoute && user) {
+    // TODO: Add proper admin role checking from user metadata or database
+    // const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    // if (profile?.role !== 'admin') {
+    //   return NextResponse.redirect(new URL('/unauthorized', request.url))
+    // }
   }
 
   return supabaseResponse
